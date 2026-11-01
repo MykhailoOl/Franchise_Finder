@@ -20,6 +20,12 @@ ACCESS_CATEGORIES = {
     "metro_entrance": "Metro entrances",
     "parking": "Parking",
 }
+ACTIVITY_CATEGORIES = {
+    "school": "Schools",
+    "university": "Universities",
+    "office": "Offices",
+    "retail_destination": "Retail destinations",
+}
 
 
 class ProfileSource(BaseModel):
@@ -60,7 +66,7 @@ class PopulationCell(BaseModel):
 class ProfilePoi(BaseModel):
     source_id: str = Field(min_length=1)
     name: str | None = None
-    kind: Literal["competitor", "access"]
+    kind: Literal["competitor", "access", "activity"]
     categories: list[str] = Field(min_length=1)
     brand_id: str | None = None
     source_url: HttpUrl
@@ -70,7 +76,11 @@ class ProfilePoi(BaseModel):
 
     @model_validator(mode="after")
     def validate_categories(self) -> "ProfilePoi":
-        allowed = COMPETITION_CATEGORIES if self.kind == "competitor" else ACCESS_CATEGORIES
+        allowed = {
+            "competitor": COMPETITION_CATEGORIES,
+            "access": ACCESS_CATEGORIES,
+            "activity": ACTIVITY_CATEGORIES,
+        }[self.kind]
         if any(category not in allowed for category in self.categories):
             raise ValueError("POI category does not belong to its declared kind")
         self.categories = sorted(set(self.categories))

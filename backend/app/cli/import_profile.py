@@ -39,7 +39,7 @@ def import_profile(inputs: list[tuple[str, Path, Path]], settings: Settings) -> 
         connection.execute("SELECT pg_advisory_xact_lock(hashtext('masterfranchises-warsaw-map'))")
         connection.execute(PROFILE_SCHEMA_PATH.read_text(encoding="utf-8"))
         for (kind, path, _), source in zip(inputs, sources, strict=True):
-            if kind not in ("population", "pois"):
+            if kind not in ("population", "pois", "activity"):
                 raise ValueError("Unsupported profile dataset kind")
             connection.execute(
                 "CREATE TEMP TABLE profile_stage(source_id text PRIMARY KEY,geometry_json jsonb,"
@@ -61,6 +61,10 @@ def import_profile(inputs: list[tuple[str, Path, Path]], settings: Settings) -> 
                         if geometry.get("type") != "Point":
                             raise ValueError("POIs require point geometry")
                         record = ProfilePoi.model_validate(properties)
+                        if (kind == "activity") != (record.kind == "activity"):
+                            raise ValueError(
+                                "Activity and competitor/access snapshots are separate"
+                            )
                     copy.write_row(
                         (record.source_id, Jsonb(geometry), Jsonb(record.model_dump(mode="json")))
                     )
@@ -89,9 +93,10 @@ def import_profile(inputs: list[tuple[str, Path, Path]], settings: Settings) -> 
                 """)
                 connection.execute("ANALYZE profile_population")
             else:
-                connection.execute("DELETE FROM profile_pois")
-                connection.execute("""
-                    INSERT INTO profile_pois(source_id,name,normalized_name,kind,categories,
+                table = "profile_activity" if kind == "activity" else "profile_pois"
+                connection.execute(f"DELETE FROM {table}")
+                connection.execute(f"""
+                    INSERT INTO {table}(source_id,name,normalized_name,kind,categories,
                         brand_id,geometry,source_url,updated_at,location_method,tags)
                     SELECT source_id,properties->>'name','',properties->>'kind',
                         ARRAY(SELECT jsonb_array_elements_text(properties->'categories')),
@@ -104,7 +109,7 @@ def import_profile(inputs: list[tuple[str, Path, Path]], settings: Settings) -> 
                     .execute(
                         "SELECT source_id,name,normalized_name,kind,categories,"
                         " location_method,tags,"
-                        " ST_X(geometry) AS x,ST_Y(geometry) AS y FROM profile_pois"
+                        f" ST_X(geometry) AS x,ST_Y(geometry) AS y FROM {table}"
                     )
                     .fetchall()
                 )
@@ -112,16 +117,19 @@ def import_profile(inputs: list[tuple[str, Path, Path]], settings: Settings) -> 
                     row["normalized_name"] = normalize_poi_name(row["name"])
                 with connection.cursor() as cursor:
                     cursor.executemany(
-                        "UPDATE profile_pois SET normalized_name=%s WHERE source_id=%s",
+                        f"UPDATE {table} SET normalized_name=%s WHERE source_id=%s",
                         [(row["normalized_name"], row["source_id"]) for row in rows],
                     )
                     duplicates = duplicate_pois(rows)
                     cursor.executemany(
-                        "UPDATE profile_pois SET duplicate_of=%s WHERE source_id=%s",
+                        f"UPDATE {table} SET duplicate_of=%s WHERE source_id=%s",
                         [(retained, omitted) for omitted, retained in duplicates.items()],
                     )
-                result["osm_duplicate_records"] = len(duplicates)
-                connection.execute("ANALYZE profile_pois")
+                duplicate_key = (
+                    "activity_duplicate_records" if kind == "activity" else "osm_duplicate_records"
+                )
+                result[duplicate_key] = len(duplicates)
+                connection.execute(f"ANALYZE {table}")
             connection.execute("DELETE FROM profile_sources WHERE kind=%s", (kind,))
             connection.execute(
                 "INSERT INTO profile_sources(id,kind,metadata,feature_count) VALUES(%s,%s,%s,%s)",
@@ -135,19 +143,19 @@ def import_profile(inputs: list[tuple[str, Path, Path]], settings: Settings) -> 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Import public Warsaw building profile snapshots")
-    for kind in ("population", "pois"):
+    for kind in ("population", "pois", "activity"):
         parser.add_argument(f"--{kind}", type=Path)
         parser.add_argument(f"--{kind}-metadata", type=Path)
     arguments = parser.parse_args()
     inputs = []
-    for kind in ("population", "pois"):
+    for kind in ("population", "pois", "activity"):
         path, metadata = getattr(arguments, kind), getattr(arguments, f"{kind}_metadata")
         if bool(path) != bool(metadata):
             parser.error(f"--{kind} and --{kind}-metadata are required together")
         if path:
             inputs.append((kind, path, metadata))
     if not inputs:
-        parser.error("Provide at least one population or POI snapshot")
+        parser.error("Provide at least one population, POI or activity snapshot")
     try:
         result = import_profile(inputs, Settings())
     except (OSError, ValueError, psycopg.Error, ijson.JSONError) as error:
