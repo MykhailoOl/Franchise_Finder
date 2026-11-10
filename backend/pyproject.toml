@@ -20,6 +20,7 @@ dev = [
     "ruff>=0.9,<1",
 ]
 model = [
+    "catboost==1.2.10",
     "joblib>=1.4,<2",
     "numpy>=2,<3",
     "scikit-learn==1.9.1",
