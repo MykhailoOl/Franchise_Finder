@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     postgres_db: str = "masterfranchises"
     postgres_user: str = "masterfranchises"
     postgres_password: SecretStr = SecretStr("masterfranchises_dev")
+    grocery_assessment_artifact_directory: Path | None = None
     api_cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
     )

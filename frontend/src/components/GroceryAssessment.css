@@ -1,0 +1,53 @@
+.grocery-assessment { margin-top: 24px; padding: 18px; border: 1px solid #cbd8c4; border-radius: 12px; background: #f5f8f0; }
+.grocery-heading h3 { margin: 0; color: #3d6037; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
+.grocery-loading { margin: 16px 0 0; color: #5c7255; font-size: 12px; line-height: 1.7; }
+.grocery-announcement { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.grocery-error { margin-top: 14px; padding: 12px; border-radius: 8px; border: 1px solid #ddd0b0; background: #fbf7eb; }
+.grocery-error p { margin: 0 0 8px; color: #796338; font-size: 12px; line-height: 1.7; }
+.grocery-error button { min-height: 38px; text-align: left; }
+.grocery-availability { margin: 14px 0 20px; padding-left: 12px; border-left: 3px solid #abbba3; }
+.grocery-availability h4 { margin: 0 0 6px; color: #50634a; font-size: 12px; font-weight: 600; }
+.grocery-availability p { margin: 0; color: #64725d; font-size: 12px; line-height: 1.7; }
+.grocery-places-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.grocery-places-heading h4, .grocery-requirements-heading h4 { margin: 0; color: #47633c; font-size: 13px; font-weight: 600; }
+.grocery-places-heading > span { color: #708168; font-size: 10px; white-space: nowrap; }
+.grocery-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
+.grocery-fact { padding: 11px; border: 1px solid #dce5d3; border-radius: 8px; background: #fbfcf8; }
+.grocery-fact dt { color: #637657; font-size: 11px; line-height: 1.5; }
+.grocery-fact dd { margin: 5px 0 0; }
+.grocery-fact dd > strong { display: block; margin-bottom: 3px; color: #3d6033; font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.grocery-fact dd > span { display: block; color: #74806a; font-size: 10px; line-height: 1.5; }
+.grocery-caption, .grocery-requirements-heading > p { margin: 8px 0 0; color: #6c7c61; font-size: 11px; line-height: 1.7; }
+.grocery-requirements-heading { margin-top: 20px; }
+.grocery-brands { margin-top: 10px; border: 1px solid #d3ddca; border-radius: 8px; background: #fafbf7; overflow: hidden; }
+.grocery-brand + .grocery-brand { border-top: 1px solid #dfe6d7; }
+.grocery-brand > summary { display: flex; align-items: center; gap: 9px; min-height: 46px; padding: 12px; cursor: pointer; list-style: none; color: #45653a; font-size: 13px; }
+.grocery-brand > summary::-webkit-details-marker { display: none; }
+.grocery-brand > summary::before { content: '+'; font-size: 16px; color: #748b65; }
+.grocery-brand[open] > summary::before { content: '−'; }
+.grocery-brand > summary .grocery-unknown { margin-left: auto; color: #7b735c; font-size: 10px; font-weight: 400; }
+.grocery-brand > div { padding: 0 12px 12px; }
+.grocery-brand > div > p { margin: 0 0 10px; color: #6c795f; font-size: 11px; line-height: 1.7; }
+.grocery-format h5 { margin: 12px 0 6px; color: #556d49; font-size: 12px; font-weight: 500; }
+.grocery-format ul { list-style: none; padding: 0; margin: 0; }
+.grocery-format li { padding: 10px 0; border-top: 1px solid #e0e7d8; }
+.grocery-format li > span { display: block; color: #4e6742; font-size: 12px; line-height: 1.7; }
+.grocery-format li > small { display: block; margin-top: 4px; color: #827659; font-size: 10px; }
+.grocery-brand > div > .grocery-reviewed { margin: 8px 0 0; font-size: 10px; }
+.grocery-sources { margin-top: 16px; }
+.grocery-sources > summary { padding: 4px 0; color: #627957; font-size: 11px; cursor: pointer; }
+.grocery-sources article { margin-top: 12px; padding-top: 12px; border-top: 1px solid #dce5d3; }
+.grocery-sources h5 { margin: 0 0 6px; color: #526b45; font-size: 11px; font-weight: 500; line-height: 1.7; }
+.grocery-sources p { margin: 0 0 8px; color: #6d7d62; font-size: 10px; line-height: 1.7; }
+.grocery-sources dl { margin: 7px 0; font-size: 10px; color: #718066; }
+.grocery-sources dl > div { display: flex; justify-content: space-between; gap: 8px; margin-top: 5px; }
+.grocery-sources dd { margin: 0; text-align: right; color: #577348; }
+.grocery-source-link { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 10px; color: #708063; font-size: 10px; line-height: 1.7; }
+.grocery-assessment a { color: #4d6f3d; text-underline-offset: 3px; }
+.grocery-assessment summary:focus-visible { outline: 2px solid #628650; outline-offset: -2px; border-radius: 4px; }
+@media (max-width: 760px) {
+  .grocery-assessment { padding: 16px; }
+  .grocery-fact dt { font-size: 12px; }
+  .grocery-format li > span { font-size: 13px; }
+  .grocery-error button { min-height: 44px; }
+}

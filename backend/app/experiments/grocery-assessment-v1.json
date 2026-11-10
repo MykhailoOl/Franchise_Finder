@@ -1,0 +1,9 @@
+{
+  "version": "grocery-assessment-policy-v1",
+  "artifact_directory_name": "grocery-catboost-v1_d4335aa9b85606a11d74d452",
+  "model_version": "warsaw-grocery-catboost-v1",
+  "training_manifest_sha256": "286fd27068647d0330ed68f5c2817f7c731f3556a81d9617e1c4994d074aabb2",
+  "evaluation_manifest_sha256": "c80b137dfc7ceb0aa9335a07a80ef4bdf6d3116eb1a637ece3a5ffa207884ce0",
+  "public_mode": "evidence_only",
+  "ranking_enabled": false
+}

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { sourceLink } from '../lib/api'
 import { getBuildingProfile, type BuildingProfileData, type NearbyVenue, type ProfileRadius, type ProfileSource } from '../lib/buildingProfile'
+import { GroceryAssessment } from './GroceryAssessment'
 import './BuildingProfile.css'
 
 type ProfileState = { requestKey: string; status: 'loading' | 'ready' | 'error'; data: BuildingProfileData | null; error: string | null }
@@ -63,6 +64,8 @@ export function BuildingProfile({ buildingId }: { buildingId: number }) {
   const access = profile?.access
 
   return (
+    <>
+    <GroceryAssessment key={buildingId} buildingId={buildingId} />
     <section className="building-profile" aria-labelledby={titleId}>
       <div className="profile-heading"><h3 id={titleId}>Around this building</h3></div>
       <fieldset className="profile-radius"><legend>Explore within</legend><div>{radii.map((value) => <label key={value} className={radius === value ? 'profile-radius-selected' : ''}><input type="radio" name={groupId} value={value} checked={radius === value} onChange={() => setRadius(value)} /><span>{countFormat.format(value)} m</span></label>)}</div></fieldset>
@@ -84,5 +87,6 @@ export function BuildingProfile({ buildingId }: { buildingId: number }) {
         </>}
       </div>
     </section>
+    </>
   )
 }

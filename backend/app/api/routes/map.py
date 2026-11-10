@@ -5,10 +5,12 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response
 from fastapi.encoders import jsonable_encoder
+from psycopg import Error as PsycopgError
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.db import addresses, buildings, franchises, profiles
+from app.core.grocery_model_status import public_assessment
+from app.db import addresses, buildings, franchises, grocery_assessments, profiles
 from app.db.session import get_engine
 
 router = APIRouter(prefix="/map", tags=["map"])
@@ -165,4 +167,26 @@ def building_profile(
         ) from error
     if result is None:
         raise HTTPException(status_code=404, detail="Building not found")
+    return json_response(request, result, max_age=0)
+
+
+@router.get("/buildings/{building_id}/grocery-assessment")
+def grocery_assessment(
+    request: Request,
+    engine: DatabaseEngine,
+    building_id: Annotated[int, Path(ge=1, le=9_007_199_254_740_991)],
+) -> Response:
+    try:
+        result = grocery_assessments.get_assessment(engine, building_id)
+    except buildings.MapDataUnavailableError as error:
+        raise HTTPException(
+            status_code=503, detail="Building information is unavailable"
+        ) from error
+    except (SQLAlchemyError, PsycopgError, ValueError) as error:
+        raise HTTPException(
+            status_code=503, detail="The grocery assessment is unavailable"
+        ) from error
+    if result is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    result = public_assessment(result, request.app.state.grocery_model_status)
     return json_response(request, result, max_age=0)

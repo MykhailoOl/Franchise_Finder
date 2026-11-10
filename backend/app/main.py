@@ -8,6 +8,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from app.api.routes.health import router as health_router
 from app.api.routes.map import router as map_router
 from app.core.config import Settings
+from app.core.grocery_model_status import GroceryModelStatus
 from app.db.session import create_database_engine
 
 
@@ -18,6 +19,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         engine = create_database_engine(settings)
         application.state.engine = engine
+        application.state.grocery_model_status = GroceryModelStatus(
+            settings.grocery_assessment_artifact_directory
+        )
         try:
             yield
         finally:
