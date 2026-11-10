@@ -1,0 +1,76 @@
+{
+  "version": "warsaw-presence-v1",
+  "defined_at": "2026-11-10",
+  "contract_version": "warsaw-data-v1",
+  "seed": "warsaw-presence-2026-11-10",
+  "target": "Observed selected-chain category presence at a stable municipal building",
+  "category_roles": {
+    "grocery": "primary",
+    "quick-service": "exploratory",
+    "pizza": "exploratory",
+    "beauty": "evidence_only"
+  },
+  "primary_pool": "valid_addressed",
+  "sensitivity_pool": "all_valid",
+  "candidate_policy": "Valid nonempty municipal footprint with a uniquely matched municipal address; independent of outlet labels",
+  "background_per_positive": 10,
+  "background_policy": "Uniform stable SHA256 ordering within each pool/category, independently for development and final partitions; known same-category positives excluded; all sampled labels remain unknown",
+  "split": {
+    "center_longitude": 21.0122,
+    "center_latitude": 52.2297,
+    "crs": 2180,
+    "final_holdout_fold": 3,
+    "development_folds": [0, 1, 2],
+    "separation_m": 2000,
+    "maximum_catchment_m": 1000,
+    "fold_names": ["southwest", "southeast", "northwest", "northeast"],
+    "policy": "Fixed projected quadrants; purge distance <=2000m from each held-out quadrant extent. Final-region purging also applies to development validation. All rows of one building share a fold."
+  },
+  "primary_predictors": [
+    "building_footprint_area_m2", "mapped_building_use", "mapped_storeys",
+    "resident_subtotal_300m", "resident_subtotal_500m", "resident_subtotal_1000m",
+    "nearest_bus_stop_distance_m", "nearest_tram_stop_distance_m",
+    "nearest_rail_station_distance_m", "nearest_metro_entrance_distance_m",
+    "bus_stop_count_500m", "parking_count_500m", "school_count_500m",
+    "university_count_500m", "office_count_500m", "retail_destination_count_500m",
+    "residential_building_fraction_500m"
+  ],
+  "deferred_predictors": [
+    "grocery_count_500m", "quick_service_count_500m", "pizza_count_500m", "beauty_count_500m"
+  ],
+  "competition_policy": "Deferred until a separate version defines fold-aware target masking and duplicate exclusion",
+  "preprocessing_policy": "Fit imputation, scaling and encoding on training data only; preserve missingness and censoring; no zero filling of unknown population; remove focal-building venues and activity",
+  "tuning_policy": "Only development geographic folds; nested spatial tuning within their training regions. Final northeast holdout stays sealed until models and hyperparameters are locked.",
+  "baseline_predictors": {
+    "population_only": ["resident_subtotal_500m"],
+    "access_only": ["nearest_bus_stop_distance_m", "nearest_tram_stop_distance_m", "nearest_rail_station_distance_m", "nearest_metro_entrance_distance_m", "bus_stop_count_500m", "parking_count_500m"]
+  },
+  "baseline_algorithm": {
+    "family": "LogisticRegression", "penalty": "l2", "C": 1.0, "max_iter": 1000,
+    "class_weight": null, "tuning": "none",
+    "preprocessing": "Training-fold median imputation plus missing/censored indicators and training-fold standard scaling; no unknown-to-zero population conversion; identically reused on evaluation rows"
+  },
+  "models": {
+    "logistic_l2": {"family": "LogisticRegression", "penalty": "l2", "C": [0.1, 1.0, 10.0], "max_iter": 1000, "class_weight": null},
+    "catboost_cpu": {"family": "CatBoostClassifier", "task_type": "CPU", "thread_count": 4, "iterations": 300, "depth": [4, 6], "learning_rate": 0.05, "l2_leaf_reg": 3, "max_trials": 2}
+  },
+  "support": {"minimum_train_positives": 30, "minimum_evaluation_positives": 10, "minimum_background": 10},
+  "promotion_gate": {
+    "status": "unevaluated",
+    "metrics": ["average_precision", "known_presence_precision_at_20", "known_presence_recall_at_20"],
+    "minimum_mean_ap_gain": 0.02,
+    "minimum_mean_recall_gain": 0.05,
+    "minimum_mean_precision_gain": 0.05,
+    "require_nonnegative_gain_every_development_fold": true,
+    "require_positive_gain_sealed_final_holdout": true,
+    "comparison": "Both declared population/access baselines plus prevalence/random retrieval",
+    "interpretation": "Retrieval of observed selected-chain sites under the frozen background sample; not commercial success, calibrated population probabilities or directly comparable category scores",
+    "threshold_basis": "Predeclared planning thresholds and workload choices, not empirically validated constants"
+  },
+  "references": [
+    "https://scikit-learn.org/stable/common_pitfalls.html",
+    "https://scikit-learn.org/stable/modules/cross_validation.html",
+    "https://arxiv.org/abs/1811.04820",
+    "https://catboost.ai/docs/en/references/training-parameters/common"
+  ]
+}
