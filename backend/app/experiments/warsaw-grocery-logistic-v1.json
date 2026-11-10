@@ -1,0 +1,164 @@
+{
+  "C_grid": [
+    0.1,
+    1.0,
+    10.0
+  ],
+  "average_precision": "non_interpolated_average_precision_with_grouped_score_ties",
+  "catboost_trained": false,
+  "category": "grocery",
+  "evaluation_version": "grocery-logistic-spatial-v1",
+  "experiment_version": "warsaw-presence-v1",
+  "family": "logistic_l2",
+  "feature_version": "warsaw-grocery-features-v1",
+  "final_C_selection": "highest_mean_fixed_C_development_fold_AP_ties_smaller_C",
+  "final_evaluation": "northeast_fold_3_once_after_all_models_and_choices_locked",
+  "final_training": "development_members_with_3_in_training_folds",
+  "holdout_reuse": "exploratory_metrics_promotion_withheld_for_different_training_lock",
+  "inner_training": "intersection_of_outer_and_inner_frozen_training_memberships",
+  "inner_validation": "outer_training_members_with_validation_fold_equal_inner_fold",
+  "metrics": [
+    "average_precision",
+    "known_presence_precision_at_20",
+    "known_presence_recall_at_20"
+  ],
+  "nested_C_selection": "highest_mean_inner_average_precision_ties_smaller_C",
+  "outer_folds": [
+    0,
+    1,
+    2
+  ],
+  "outer_training": "frozen_training_folds_contains_outer_fold",
+  "outer_validation": "frozen_validation_fold_equals_outer_fold",
+  "preprocessing": {
+    "all_missing_numeric": "drop_training_empty_columns_and_never_revive_at_inference",
+    "categorical_encoding": "training_only_one_hot_no_dropped_category_ignore_unseen",
+    "class_weight": null,
+    "column_order": "predictor_order_numeric_values_and_flags_then_training_category_order",
+    "convergence_failure": "raise_no_scores_no_automatic_iteration_increase",
+    "cpu_threads": 1,
+    "each_selected_predictor_flags": [
+      "missing",
+      "censored",
+      "partial",
+      "source_available"
+    ],
+    "forbidden_inputs": [
+      "building_identifiers",
+      "labels",
+      "folds",
+      "source_identifiers",
+      "dates",
+      "unselected_predictors",
+      "activity_exclusion_counts",
+      "neighbor_diagnostic_counts"
+    ],
+    "max_iterations": 1000,
+    "numeric_imputation": "training_median_only",
+    "one_hot_drop": null,
+    "penalty": "l2",
+    "population_and_residential_additional_flags": [
+      "source_coverage_fraction",
+      "source_coverage_missing"
+    ],
+    "random_seed": 0,
+    "scaled_columns": "all_retained_numeric_values_and_quality_flags",
+    "scaling": "training_mean_and_standard_deviation_after_median_imputation",
+    "shared_quality": "retained_per_selected_predictor_including_repeated_geographic_coverage",
+    "solver": "lbfgs",
+    "spatial_predictor_flags": [
+      "coverage_fraction",
+      "coverage_missing"
+    ],
+    "tolerance": 0.0001,
+    "unscaled_columns": "one_hot_categorical_columns",
+    "version": "warsaw-grocery-logistic-v1"
+  },
+  "promotion": "frozen_experiment_thresholds_primary_scenario_only",
+  "random_reference": "analytic_expected_metrics_for_uniform_random_permutation",
+  "references": [
+    "population_only",
+    "access_only",
+    "prevalence_reference",
+    "random_reference"
+  ],
+  "restricted_baseline_C": 1.0,
+  "scenarios": {
+    "all_valid": {
+      "pool": "all_valid",
+      "predictors": [
+        "building_footprint_area_m2",
+        "mapped_building_use",
+        "mapped_storeys",
+        "resident_subtotal_300m",
+        "resident_subtotal_500m",
+        "resident_subtotal_1000m",
+        "nearest_bus_stop_distance_m",
+        "nearest_tram_stop_distance_m",
+        "nearest_rail_station_distance_m",
+        "nearest_metro_entrance_distance_m",
+        "bus_stop_count_500m",
+        "parking_count_500m",
+        "school_count_500m",
+        "university_count_500m",
+        "office_count_500m",
+        "retail_destination_count_500m",
+        "residential_building_fraction_500m"
+      ]
+    },
+    "no_mapped_use": {
+      "pool": "valid_addressed",
+      "predictors": [
+        "building_footprint_area_m2",
+        "mapped_storeys",
+        "resident_subtotal_300m",
+        "resident_subtotal_500m",
+        "resident_subtotal_1000m",
+        "nearest_bus_stop_distance_m",
+        "nearest_tram_stop_distance_m",
+        "nearest_rail_station_distance_m",
+        "nearest_metro_entrance_distance_m",
+        "bus_stop_count_500m",
+        "parking_count_500m",
+        "school_count_500m",
+        "university_count_500m",
+        "office_count_500m",
+        "retail_destination_count_500m",
+        "residential_building_fraction_500m"
+      ]
+    },
+    "primary": {
+      "pool": "valid_addressed",
+      "predictors": [
+        "building_footprint_area_m2",
+        "mapped_building_use",
+        "mapped_storeys",
+        "resident_subtotal_300m",
+        "resident_subtotal_500m",
+        "resident_subtotal_1000m",
+        "nearest_bus_stop_distance_m",
+        "nearest_tram_stop_distance_m",
+        "nearest_rail_station_distance_m",
+        "nearest_metro_entrance_distance_m",
+        "bus_stop_count_500m",
+        "parking_count_500m",
+        "school_count_500m",
+        "university_count_500m",
+        "office_count_500m",
+        "retail_destination_count_500m",
+        "residential_building_fraction_500m"
+      ]
+    }
+  },
+  "score_interpretation": "ranking_observed_chain_presence_not_business_success_probability",
+  "sensitivities": "diagnostic_only_never_replace_primary_after_final_evaluation",
+  "target_encoding": {
+    "observed_presence": 1,
+    "unlabelled_background": 0
+  },
+  "top_20_ties": "fractional_share_of_boundary_tie_group_no_label_based_tiebreak",
+  "uncertainty": "three_paired_region_results_and_descriptive_mean_min_max_no_iid_CI",
+  "unsupported_inner_fold": "disable_entire_outer_tuning_use_fixed_C_1_and_report_reason",
+  "version": "warsaw-grocery-logistic-v1",
+  "website_integration": false
+}
