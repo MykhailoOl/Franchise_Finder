@@ -55,10 +55,10 @@ export function AddressSearch({ onSelect }: Props) {
     setOpen(false)
     setActiveIndex(-1)
     setNotice(result.match_status === 'matched'
-      ? `Selected ${result.address}. The building association is based on the address point’s location.`
+      ? `Selected ${result.address}`
       : result.match_status === 'ambiguous'
-        ? `Located ${result.address}. Several buildings could match this address point; no building was selected.`
-        : `Located ${result.address}. No building is linked to this address point; no building was selected.`)
+        ? `Address found. Select the correct building on the map.`
+        : `Address found. Its exact building is unconfirmed.`)
     onSelect(result)
   }, [onSelect])
 
@@ -86,10 +86,10 @@ export function AddressSearch({ onSelect }: Props) {
             setNotice(selectionHint(data))
           }
         }
-      }).catch((error: unknown) => {
+      }).catch(() => {
         if (disposed || generation.current !== requestGeneration) return
         pendingSubmit.current = null
-        setState({ status: 'error', query: trimmed, data: null, error: controller.signal.aborted ? 'Address search took too long. Please try again.' : error instanceof Error ? error.message : 'Address search is unavailable.' })
+        setState({ status: 'error', query: trimmed, data: null, error: controller.signal.aborted ? 'Address search took too long. Please try again.' : 'Address search is unavailable. Please try again.' })
       }).finally(() => window.clearTimeout(timeout))
     }, pendingSubmit.current === trimmed ? 0 : 250)
 
@@ -172,25 +172,25 @@ export function AddressSearch({ onSelect }: Props) {
       if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
     }}>
       <form className="address-search-form" role="search" aria-label="Find a Warsaw building by address" onSubmit={(event) => { event.preventDefault(); submitSearch() }}>
-        <label htmlFor={inputId}>Find a building by address</label>
+        <label htmlFor={inputId}>Search an address</label>
         <div className="address-input-row">
           <div className="address-input-wrap">
             <svg className="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 4.5 4.5" /></svg>
-            <input ref={inputRef} id={inputId} type="text" role="combobox" autoComplete="off" spellCheck={false} maxLength={120} placeholder="Street and building number, Warsaw" value={query} onChange={(event) => changeQuery(event.target.value)} onFocus={() => query.trim().length >= 2 && setOpen(true)} onKeyDown={handleKeyDown} aria-autocomplete="list" aria-expanded={showPopup} aria-controls={listId} aria-activedescendant={showPopup && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined} aria-describedby={descriptionId} />
+            <input ref={inputRef} id={inputId} type="text" role="combobox" autoComplete="off" spellCheck={false} maxLength={120} placeholder="Street and number, e.g. Złota 59" value={query} onChange={(event) => changeQuery(event.target.value)} onFocus={() => query.trim().length >= 2 && setOpen(true)} onKeyDown={handleKeyDown} aria-autocomplete="list" aria-expanded={showPopup} aria-controls={listId} aria-activedescendant={showPopup && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined} aria-describedby={descriptionId} />
             {query && <button type="button" className="clear-search" aria-label="Clear address search" onClick={() => { changeQuery(''); inputRef.current?.focus() }}>×</button>}
           </div>
-          <button type="submit" className="address-submit">Find building<span aria-hidden="true">↗</span></button>
+          <button type="submit" className="address-submit">Search<span aria-hidden="true">↗</span></button>
         </div>
       </form>
-      <p id={descriptionId} className={`search-description ${notice ? 'search-description-notice' : ''}`} role="status">{notice ?? 'Search Warsaw street addresses, or select a building on the map.'}</p>
+      <p id={descriptionId} className={`search-description ${notice ? 'search-description-notice' : ''}`} role="status">{notice ?? 'Search Warsaw or choose a building on the map.'}</p>
       {showPopup && <div className="address-popup">
         {state.status === 'loading' && <p className="search-feedback" role="status"><span className="search-loading-dot" />Searching Warsaw addresses…</p>}
         {state.status === 'error' && <div className="search-feedback search-feedback-error" role="alert"><p>{state.error}</p><button type="button" className="text-button" onClick={submitSearch}>Try again ↻</button></div>}
-        {state.status === 'ready' && !results.length && <p className="search-feedback" role="status">{state.data?.status === 'empty' ? 'The Warsaw address dataset is not available yet.' : 'No matching address. Check the street name and building number.'}</p>}
+        {state.status === 'ready' && !results.length && <p className="search-feedback" role="status">{state.data?.status === 'empty' ? 'Address search is temporarily unavailable.' : 'No matching address. Check the street name and building number.'}</p>}
         <ul id={listId} role="listbox" aria-label="Warsaw address suggestions" aria-busy={state.status === 'loading'}>
-          {results.map((result, index) => <li id={`${listId}-${index}`} key={result.id} role="option" aria-selected={index === activeIndex} className={index === activeIndex ? 'address-option address-option-active' : 'address-option'} onMouseDown={(event) => event.preventDefault()} onClick={() => chooseResult(result)}><span className="address-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M19 10c0 5-7 10-7 10S5 15 5 10a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2.5" /></svg></span><span><strong>{result.address}{result.postal_code && <span className="address-postcode">{result.postal_code}</span>}</strong><small>{result.match_status === 'matched' ? 'Associated building available' : result.match_status === 'ambiguous' ? 'Address point · building match is ambiguous' : 'Address point · no linked building'}</small></span><span className="address-option-arrow" aria-hidden="true">↗</span></li>)}
+          {results.map((result, index) => <li id={`${listId}-${index}`} key={result.id} role="option" aria-selected={index === activeIndex} className={index === activeIndex ? 'address-option address-option-active' : 'address-option'} onMouseDown={(event) => event.preventDefault()} onClick={() => chooseResult(result)}><span className="address-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M19 10c0 5-7 10-7 10S5 15 5 10a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2.5" /></svg></span><span><strong>{result.address}</strong><small>{result.match_status === 'matched' ? 'View building' : result.match_status === 'ambiguous' ? 'Choose the building on the map' : 'Exact building unconfirmed'}</small></span><span className="address-option-arrow" aria-hidden="true">↗</span></li>)}
         </ul>
-        {source && <div className="search-source">Address points: {sourceHref ? <a href={sourceHref} target="_blank" rel="noreferrer">{source.attribution || source.name}</a> : source.attribution || source.name}</div>}
+        {source && <div className="search-source">Addresses: {sourceHref ? <a href={sourceHref} target="_blank" rel="noreferrer">{source.attribution || source.name}</a> : source.attribution || source.name}</div>}
       </div>}
     </div>
   )

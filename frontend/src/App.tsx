@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getBuilding, getMapMetadata, sourceLink, type AddressFocusRequest, type AddressSearchResult, type BuildingFeature, type MapMetadata, type OutletFocusRequest, type SourceInfo } from './lib/api'
 import { AddressSearch } from './components/AddressSearch'
 import { FranchiseFilters } from './components/FranchiseFilters'
@@ -26,6 +26,7 @@ function SourceCredit({ source }: { source: SourceInfo }) {
 }
 
 function App() {
+  const workspaceRef = useRef<HTMLDivElement>(null)
   const [metadata, setMetadata] = useState<MetadataState>({ status: 'loading', data: null, error: null })
   const [metadataRevision, setMetadataRevision] = useState(0)
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -36,7 +37,16 @@ function App() {
   const [manualSelectionRevision, setManualSelectionRevision] = useState(0)
   const [outletFocus, setOutletFocus] = useState<OutletFocusRequest | null>(null)
   const [outletGroup, setOutletGroup] = useState<number[]>([])
+  const [mobileView, setMobileView] = useState<'map' | 'details'>('map')
   const franchises = useFranchises()
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 760px)').matches) return
+    const hiddenPanel = workspaceRef.current?.querySelector(mobileView === 'map' ? '.building-panel' : '.map-column')
+    if (hiddenPanel?.contains(document.activeElement)) {
+      workspaceRef.current?.querySelector<HTMLButtonElement>('.mobile-view-switch button[aria-pressed="true"]')?.focus()
+    }
+  }, [mobileView])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -45,8 +55,8 @@ function App() {
 
     getMapMetadata(controller.signal).then((data) => {
       if (!disposed) setMetadata({ status: 'ready', data, error: null })
-    }).catch((error: unknown) => {
-      if (!disposed) setMetadata({ status: 'error', data: null, error: controller.signal.aborted ? 'The building data request timed out. Please try again.' : error instanceof Error ? error.message : 'Building data is unavailable.' })
+    }).catch(() => {
+      if (!disposed) setMetadata({ status: 'error', data: null, error: controller.signal.aborted ? 'The building data request timed out. Please try again.' : 'Buildings are temporarily unavailable. Please try again.' })
     }).finally(() => window.clearTimeout(timeout))
 
     return () => { disposed = true; controller.abort(); window.clearTimeout(timeout) }
@@ -60,14 +70,15 @@ function App() {
 
     getBuilding(selectedId, controller.signal).then((data) => {
       if (!disposed) setSelection({ status: 'ready', data, error: null })
-    }).catch((error: unknown) => {
-      if (!disposed) setSelection({ status: 'error', data: null, error: controller.signal.aborted ? 'Building details took too long to load. Please try again.' : error instanceof Error ? error.message : 'Building details are unavailable.' })
+    }).catch(() => {
+      if (!disposed) setSelection({ status: 'error', data: null, error: controller.signal.aborted ? 'Building details took too long to load. Please try again.' : 'Building details are unavailable. Please try again.' })
     }).finally(() => window.clearTimeout(timeout))
 
     return () => { disposed = true; controller.abort(); window.clearTimeout(timeout) }
   }, [selectedId, selectionRevision])
 
   const selectBuilding = useCallback((id: number) => {
+    setMobileView('details')
     setOutletGroup([])
     setManualSelectionRevision((value) => value + 1)
     setAddressFocus(null)
@@ -79,6 +90,7 @@ function App() {
   }, [])
 
   const selectAddress = useCallback((result: AddressSearchResult) => {
+    setMobileView(result.match_status === 'matched' ? 'details' : 'map')
     setOutletGroup([])
     setOutletFocus(null)
     setAddressFocus({ result })
@@ -97,6 +109,7 @@ function App() {
   const selectOutlet = useCallback((id: number) => {
     const outlet = franchises.outlets?.features.find((item) => item.id === id)
     if (!outlet) return
+    setMobileView('details')
     setOutletGroup([])
     setManualSelectionRevision((value) => value + 1)
     setAddressFocus(null)
@@ -113,6 +126,7 @@ function App() {
   }, [franchises.outlets])
 
   const selectOutletGroup = useCallback((ids: number[]) => {
+    setMobileView('details')
     setOutletGroup(ids)
     setOutletFocus(null)
     setAddressFocus(null)
@@ -127,6 +141,7 @@ function App() {
   }, [])
 
   function clearSelection() {
+    setMobileView('map')
     setOutletGroup([])
     setManualSelectionRevision((value) => value + 1)
     setAddressFocus(null)
@@ -150,70 +165,35 @@ function App() {
   const groupedOutlets = franchises.visibleOutlets.features.filter((outlet) => outletGroup.includes(outlet.id))
 
   return (
-    <div className="map-workspace">
+    <div ref={workspaceRef} className="map-workspace">
       <header className="site-header">
         <a className="brand" href="/" aria-label="MasterFranchises home"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M5 22V7l9 8 9-8v15M5 7l9-4 9 4M14 15v10" /></svg></span><span>MasterFranchises</span></a>
-        <div className="header-divider" /><span className="header-page">Location explorer</span>
-        <span className="city-label"><span />WARSAW, POLAND</span>
+        <span className="header-page">Find your next location</span>
+        <span className="city-label"><span />Warsaw</span>
       </header>
-
       <div className="search-toolbar"><AddressSearch key={manualSelectionRevision} onSelect={selectAddress} /></div>
       <FranchiseFilters catalog={franchises.catalog} selectedIds={franchises.selectedIds} status={franchises.status} error={franchises.error} onToggle={franchises.toggleBrands} onAll={franchises.selectAll} onNone={franchises.selectNone} onRetry={franchises.retry} />
-
-      <main className="workspace-content">
+      <nav className="mobile-view-switch" aria-label="Explorer view">
+        <button type="button" aria-pressed={mobileView === 'map'} onClick={() => setMobileView('map')}>Map</button>
+        <button type="button" aria-pressed={mobileView === 'details'} onClick={() => setMobileView('details')}>Details{(selectedId !== null || outletFocus || groupedOutlets.length > 0) && <span className="selection-indicator" aria-label="Location selected" />}</button>
+      </nav>
+      <main className={`workspace-content mobile-view-${mobileView}`}>
         <aside className="building-panel" aria-labelledby="panel-title">
-          <div className="panel-intro"><p className="eyebrow">LOCATION EXPLORER</p><h1 id="panel-title">A closer look<br />at <em>Warsaw.</em></h1><p>See franchise locations and the buildings around them.</p></div>
-          <div className="panel-section-heading"><h2>{outletFocus ? 'Selected location' : selectedId === null ? 'Explore locations' : 'Selected building'}</h2>{(selectedId !== null || outletFocus) && <button className="clear-selection" type="button" onClick={clearSelection} aria-label="Clear selection">×</button>}</div>
+          <div className="panel-section-heading"><h1 id="panel-title">{outletFocus ? 'Franchise location' : selectedId === null ? 'Explore Warsaw' : 'Building details'}</h1>{(selectedId !== null || outletFocus || groupedOutlets.length > 0) && <button className="clear-selection" type="button" onClick={clearSelection} aria-label="Clear selection">×</button>}</div>
           {outletFocus && <OutletDetails outlet={outletFocus.outlet} />}
-          {groupedOutlets.length > 0 && <section className="building-outlets overlapping-outlets"><h3>{groupedOutlets.length} locations here</h3><p>These markers overlap. Choose an outlet to inspect its location evidence.</p><ul>{groupedOutlets.map((outlet) => <li key={outlet.id}><button type="button" onClick={() => selectOutlet(outlet.id)}><strong>{outlet.properties.brand_name}</strong><span>{outlet.properties.address}</span></button></li>)}</ul></section>}
-
+          {groupedOutlets.length > 0 && <section className="building-outlets overlapping-outlets"><h3>{groupedOutlets.length} locations here</h3><p>Choose a franchise to see its address and nearby area.</p><ul>{groupedOutlets.map((outlet) => <li key={outlet.id}><button type="button" onClick={() => selectOutlet(outlet.id)}><strong>{outlet.properties.brand_name}</strong><span>{outlet.properties.address}</span></button></li>)}</ul></section>}
           <div className="selection-content" aria-live="polite" aria-busy={selection.status === 'loading'}>
-            {selection.status === 'idle' && !outletFocus && !groupedOutlets.length && <div className="selection-empty"><div className="building-illustration" aria-hidden="true"><svg viewBox="0 0 120 100" fill="none"><path d="m20 43 40-22 40 22-40 23-40-23Z" /><path d="M20 43v29l40 23 40-23V43M60 66v29" /><path d="m36 52 24-14 24 14M36 65l12 7m24 0 12-7M36 77l12 7m24 0 12-7" /></svg><span className="illustration-dot" /></div><h3>Select a location or a building</h3><p>Click an outlet marker for its source details, or a footprint to see the brands linked to that building.</p><div className="navigation-hint"><span aria-hidden="true">↔</span>Drag to move<span className="hint-separator" />Scroll to zoom</div></div>}
+            {selection.status === 'idle' && !outletFocus && !groupedOutlets.length && <div className="selection-empty"><div className="building-illustration" aria-hidden="true"><svg viewBox="0 0 120 100" fill="none"><path d="m20 43 40-22 40 22-40 23-40-23Z" /><path d="M20 43v29l40 23 40-23V43M60 66v29" /><path d="m36 52 24-14 24 14M36 65l12 7m24 0 12-7M36 77l12 7m24 0 12-7" /></svg></div><h2>Start with a place</h2><p>Search an address or select a building to explore nearby residents, businesses and transport.</p><div className="navigation-hint">Drag to move · Scroll to zoom</div><button className="mobile-map-link text-button" type="button" onClick={() => setMobileView('map')}>Explore the map</button></div>}
             {selection.status === 'loading' && <div className="selection-loading"><span className="loading-ring" /><p>Loading building details…</p></div>}
-            {selection.status === 'error' && <div className="selection-error"><h3>Details unavailable</h3><p>{selection.error}</p><button className="text-button" type="button" onClick={retrySelectedBuilding}>Try again <span aria-hidden="true">↻</span></button></div>}
-            {feature && (
-              <div className="building-details">
-                <div className="selected-badge"><span />BUILDING FOOTPRINT</div>
-                <h3>{selectedHeading ?? 'Building in Warsaw'}</h3>
-                <p className="building-id">Source ID <span>{feature.properties.source_id}</span></p>
-                <div className="area-card">
-                  <span>Footprint area</span>
-                  <strong>{numberFormat.format(feature.properties.area_m2)} <small>m²</small></strong>
-                  <p>Area covered by the building on the ground.</p>
-                </div>
-              </div>
-            )}
+            {selection.status === 'error' && <div className="selection-error"><h2>Details unavailable</h2><p>{selection.error}</p><button className="text-button" type="button" onClick={retrySelectedBuilding}>Try again</button></div>}
+            {feature && <div className="building-details"><h2>{selectedHeading ?? 'Building in Warsaw'}</h2>{feature.properties.building_type_label && <p className="building-use">{feature.properties.building_type_label}</p>}</div>}
           </div>
-
+          {feature && <BuildingOutlets outlets={feature.properties.franchises ?? []} onSelect={selectOutlet} />}
           {selectedId !== null && <BuildingProfile buildingId={selectedId} />}
-
-          {feature && <>
-              <BuildingOutlets outlets={feature.properties.franchises ?? []} onSelect={selectOutlet} />
-              <details className="building-source-details">
-                <summary>Building addresses & source</summary>
-                <dl className="building-facts">
-                  <div className="associated-addresses">
-                    <dt>{associatedAddresses.length > 1 ? 'Associated addresses' : 'Associated address'}</dt>
-                    <dd>{associatedAddresses.length ? <ul>{associatedAddresses.map((address) => <li key={address.id} className={selectedAddress?.id === address.id ? 'chosen-address' : undefined}>{address.address}{address.postal_code && <small>{address.postal_code}</small>}</li>)}</ul> : feature.properties.address ?? 'No address is linked to this footprint'}</dd>
-                  </div>
-                  <div>
-                    <dt>Source building category</dt>
-                    <dd>{feature.properties.building_type_label ?? feature.properties.building_type ?? 'Not provided'}{feature.properties.building_type && <small>Source code: {feature.properties.building_type}</small>}</dd>
-                  </div>
-                  <div><dt>Data updated</dt><dd>{formatDate(feature.properties.source.updated_at)}</dd></div>
-                </dl>
-                {associatedAddresses.length > 0 && <p className="address-association-note">Addresses are linked spatially from official city address points.{addressSource && <> Source: <SourceCredit source={addressSource} />.</>}</p>}
-                <p className="building-note">This footprint does not indicate available commercial space, floor area, or franchise suitability.</p>
-              </details>
-          </>}
-
+          {feature && <details className="building-source-details"><summary>About this building</summary><dl className="building-facts"><div className="associated-addresses"><dt>Addresses</dt><dd>{associatedAddresses.length ? <ul>{associatedAddresses.map((address) => <li key={address.id} className={selectedAddress?.id === address.id ? 'chosen-address' : undefined}>{address.address}</li>)}</ul> : feature.properties.address ?? 'Address unavailable'}</dd></div><div><dt>Building footprint</dt><dd>{numberFormat.format(feature.properties.area_m2)} m²</dd></div>{feature.properties.source.updated_at && <div><dt>Building data updated</dt><dd>{formatDate(feature.properties.source.updated_at)}</dd></div>}</dl><p className="building-note">Footprint size is the area covered on the ground. Available unit size and permitted use need to be checked.</p>{addressSource && <p className="address-association-note">Address source: <SourceCredit source={addressSource} /></p>}</details>}
           <OutletDirectory outlets={franchises.visibleOutlets.features} onSelect={selectOutlet} />
-
-          <div className="dataset-card"><div className="dataset-heading"><span className={`dataset-dot ${metadata.data?.status === 'ready' ? 'dataset-dot-ready' : ''}`} /><h2>Warsaw building data</h2></div>{metadata.status === 'loading' ? <p>Checking the building dataset…</p> : metadata.status === 'error' ? <><p>{metadata.error}</p><button type="button" className="text-button" onClick={retryMetadata}>Retry dataset ↻</button></> : metadata.data?.status === 'empty' ? <><p>No building dataset has been imported yet.</p><button type="button" className="text-button" onClick={retryMetadata}>Check again ↻</button></> : <><p>{numberFormat.format(metadata.data?.feature_count ?? 0)} building footprints</p><span className="dataset-imported">Imported {formatDate(metadata.data?.last_imported_at ?? null)}</span></>}</div>
-          <footer className="panel-footer">Official listings, with source coverage shown above.<span>Locations do not establish available premises or franchise suitability.</span></footer>
         </aside>
-
-        <div className="map-column"><WarsawMap metadata={metadata.data} selectedId={selectedId} selectedFeature={feature} addressFocus={addressFocus} onSelect={selectBuilding} onRetryMetadata={retryMetadata} metadataError={metadata.error} metadataLoading={metadata.status === 'loading'} outlets={franchises.visibleOutlets} selectedBrands={franchises.selectedBrands} outletFocus={outletFocus} onSelectOutlet={selectOutlet} onSelectOutletGroup={selectOutletGroup} onRetryOutlets={franchises.retry} /><div className="data-attribution"><span>Buildings: {source ? <SourceCredit source={source} /> : 'Warsaw city dataset'}</span><span>Data updated: {formatDate(source?.updated_at ?? null)}</span></div></div>
+        <div className="map-column"><WarsawMap metadata={metadata.data} selectedId={selectedId} selectedFeature={feature} addressFocus={addressFocus} onSelect={selectBuilding} onRetryMetadata={retryMetadata} metadataError={metadata.error} metadataLoading={metadata.status === 'loading'} outlets={franchises.visibleOutlets} selectedBrands={franchises.selectedBrands} outletFocus={outletFocus} onSelectOutlet={selectOutlet} onSelectOutletGroup={selectOutletGroup} onRetryOutlets={franchises.retry} /><div className="data-attribution"><span>Buildings: {source ? <SourceCredit source={source} /> : 'City of Warsaw'}</span></div></div>
       </main>
     </div>
   )

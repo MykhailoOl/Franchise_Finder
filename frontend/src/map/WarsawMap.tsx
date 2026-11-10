@@ -43,7 +43,6 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
   const [mapError, setMapError] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
   const [zoom, setZoom] = useState(INITIAL_ZOOM)
-  const [center, setCenter] = useState(WARSAW_CENTER)
   const [outletError, setOutletError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -68,7 +67,7 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
         canvasContextAttributes: { antialias: true },
       })
     } catch {
-      queueMicrotask(() => setMapError('The interactive map could not start. Enable hardware acceleration in your browser and try again.'))
+      queueMicrotask(() => setMapError('The map could not start. Try reloading or opening another browser.'))
       return
     }
 
@@ -93,13 +92,9 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
       setReadyMap(map)
       setMapError(null)
       setZoom(map.getZoom())
-      const currentCenter = map.getCenter()
-      setCenter([currentCenter.lng, currentCenter.lat])
     })
     map.on('moveend', () => {
       setZoom(map.getZoom())
-      const next = map.getCenter()
-      setCenter([next.lng, next.lat])
     })
     map.on('sourcedataloading', (event) => {
       if (event.sourceId === BUILDING_SOURCE && !failedSources.current.has(BUILDING_SOURCE)) setBuildingStatus('loading')
@@ -347,18 +342,17 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
     onRetryMetadata()
   }
 
-  const buildingMessage = metadataLoading ? 'Loading building data…'
-    : metadataError ? 'Building data unavailable'
-      : metadata?.status === 'empty' ? 'Building data has not been imported yet'
-        : buildingStatus === 'error' ? 'Some building footprints could not load'
+  const buildingMessage = metadataLoading ? 'Loading buildings…'
+    : metadataError ? 'Buildings are temporarily unavailable'
+      : metadata?.status === 'empty' ? 'Buildings are not available yet'
+        : buildingStatus === 'error' ? 'Some buildings could not load'
           : zoom < 13 ? 'Zoom in to see individual buildings'
             : buildingStatus === 'loading' ? 'Loading buildings in this view…'
-              : 'Select a building to explore it'
+              : ''
 
   return (
     <section className="map-area" aria-label="Interactive Warsaw map">
       <div className="map-canvas" ref={containerRef} />
-      <div className="map-title"><span className="map-title-dot" /><div><strong>Warsaw</strong><span>Building footprints</span></div></div>
       <button className="show-all-outlets" type="button" disabled={!outlets.features.some((outlet) => outlet.geometry)} onClick={() => {
         const bounds = new LngLatBounds()
         for (const outlet of outlets.features) if (outlet.geometry) bounds.extend(outlet.geometry.coordinates as [number, number])
@@ -366,13 +360,12 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
       }}>View all locations</button>
       <button className="reset-view" type="button" onClick={() => mapRef.current?.flyTo({ center: WARSAW_CENTER, zoom: INITIAL_ZOOM, bearing: 0, duration: 800 })} disabled={Boolean(mapError)} aria-label="Reset map to central Warsaw"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg></button>
       <div className="map-message-stack" aria-live="polite">
-        {(mapError || basemapStatus === 'error') && <div className="map-message map-message-error"><span>{mapError ?? 'Street map unavailable. Building data is loaded separately.'}</span><button type="button" onClick={retryMap}>Retry map</button></div>}
+        {(mapError || basemapStatus === 'error') && <div className="map-message map-message-error"><span>{mapError ?? 'The street map is temporarily unavailable.'}</span><button type="button" onClick={retryMap}>Retry map</button></div>}
         {!mapError && basemapStatus === 'loading' && <div className="map-message">Loading street map…</div>}
         {outletError && <div className="map-message map-message-error"><span>{outletError}</span><button type="button" onClick={() => { setOutletError(null); onRetryOutlets() }}>Reload locations</button></div>}
-        <div className={`map-message ${(metadataError || buildingStatus === 'error') ? 'map-message-error' : ''}`}><span>{buildingMessage}</span>{(metadataError || metadata?.status === 'empty' || buildingStatus === 'error') && <button type="button" onClick={retryBuildings} disabled={metadataLoading}>Retry buildings</button>}</div>
+        {buildingMessage && <div className={`map-message ${(metadataError || buildingStatus === 'error') ? 'map-message-error' : ''}`}><span>{buildingMessage}</span>{(metadataError || metadata?.status === 'empty' || buildingStatus === 'error') && <button type="button" onClick={retryBuildings} disabled={metadataLoading}>Retry buildings</button>}</div>}
       </div>
-      <div className="map-legend"><span><i />Footprint</span><span><i className="outlet-building-swatch" />Franchise</span><span><i className="multiple-brands-swatch" />Multiple brands</span><span><i className="uncertain-outlet-swatch" />Unconfirmed building</span></div>
-      <div className="map-coordinates" aria-label="Map center and zoom">{center[1].toFixed(4)}° N · {center[0].toFixed(4)}° E<span>Zoom {zoom.toFixed(1)}</span></div>
+      <div className="map-legend"><span><i />Building</span><span><i className="outlet-building-swatch" />Franchise</span><span><i className="multiple-brands-swatch" />Multiple brands</span><span><i className="uncertain-outlet-swatch" />Approximate location</span></div>
     </section>
   )
 }

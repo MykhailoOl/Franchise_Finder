@@ -19,8 +19,8 @@ export function useFranchises() {
     const timeout = window.setTimeout(() => controller.abort(), 20000)
     Promise.all([getFranchiseCatalog(controller.signal), getOutlets(controller.signal)]).then(([catalog, outlets]) => {
       if (!disposed) setState({ status: 'ready', catalog, outlets, error: null })
-    }).catch((error: unknown) => {
-      if (!disposed) setState({ status: 'error', catalog: null, outlets: null, error: controller.signal.aborted ? 'Franchise locations took too long to load. Please try again.' : error instanceof Error ? error.message : 'Franchise locations are unavailable.' })
+    }).catch(() => {
+      if (!disposed) setState({ status: 'error', catalog: null, outlets: null, error: controller.signal.aborted ? 'Franchise locations took too long to load. Please try again.' : 'Franchise locations are unavailable. Please try again.' })
     }).finally(() => window.clearTimeout(timeout))
     return () => { disposed = true; controller.abort(); window.clearTimeout(timeout) }
   }, [revision])
