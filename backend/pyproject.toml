@@ -23,6 +23,7 @@ model = [
     "catboost==1.2.10",
     "joblib>=1.4,<2",
     "numpy>=2,<3",
+    "pyproj==3.8.0",
     "scikit-learn==1.9.1",
     "threadpoolctl>=3.5,<4",
 ]
