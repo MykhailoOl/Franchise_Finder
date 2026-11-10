@@ -1,0 +1,185 @@
+{
+  "version": "grocery-fresh-evaluation-v1",
+  "created_at": "2026-11-10T20:57:44.974521+00:00",
+  "purpose": "Prospective external geographic replication of observed selected grocery chain location patterns",
+  "geography": "Radom",
+  "website_scope": "Warsaw unchanged",
+  "collector": {
+    "version": "radom-public-sources-v1",
+    "municipality_id": "1463011",
+    "building_id_prefix": "146301_1.",
+    "candidate_frame": "all_buildings_in_official_radom_city_wfs",
+    "municipality_id_source_url": "https://bip.radom.pl/",
+    "city_service_bounds": [
+      21.0531545892973,
+      51.3484959754452,
+      21.2593121086332,
+      51.485976468327
+    ],
+    "context_bounds": [
+      21.03,
+      51.33,
+      21.28,
+      51.5
+    ],
+    "context_buildings": "city_only_with_declared_extent_partial_edge_flags",
+    "buildings": {
+      "endpoint": "https://ikerg.modgik.radom.pl/radom-egib",
+      "type_name": "ms:budynki",
+      "crs": "urn:ogc:def:crs:EPSG::2178"
+    },
+    "addresses": {
+      "endpoint": "https://mapy.geoportal.gov.pl/wss/ext/wfs/KrajowaIntegracjaNumeracjiAdresowej",
+      "type_name": "adresyUlice:A07_Punkty_adresowe",
+      "crs": "urn:ogc:def:crs:EPSG::2180",
+      "filter": {
+        "field": "ID_GMINY",
+        "equals": "1463011"
+      }
+    },
+    "wfs_page_size": 5000,
+    "wfs_format": "application/gml+xml; version=3.2",
+    "osm_endpoint": "https://overpass-api.de/api/interpreter",
+    "osm_normalization": "existing_frozen_access_and_activity_classification",
+    "grocery_endpoints": {
+      "zabka": "https://www.zabka.pl/app/uploads/locator-store-data.json",
+      "lewiatan": "https://lewiatan.pl/api/stores"
+    },
+    "grocery_snapshot": "fresh_national_responses_after_protocol_freeze",
+    "grocery_scope": "Radom_city_names_then_explicit_coordinate_and_address_checks",
+    "gus_inputs": {
+      "archive": {
+        "path": ".local/data/profile/sources/Grid_125_XLS.zip",
+        "sha256": "de81cf7c3150f0120dbfcb486cd993f25d5be15e53ce20a548b584dbb3f36dbb"
+      },
+      "feed": {
+        "path": ".local/data/profile/sources/population-feed.xml",
+        "sha256": "e9b06cdd3b9c27d1ab0be5deb87359476f2cfcf57fe4b3c4eb43f4b934888c63"
+      },
+      "archive_metadata": {
+        "path": ".local/data/profile/sources/Grid_125_XLS.zip.metadata.json",
+        "sha256": "bb64eba034056bdd8f8e9030c577b73a464bc518a87b0968e4b814c8ef30d2af"
+      },
+      "feed_metadata": {
+        "path": ".local/data/profile/sources/population-feed.xml.metadata.json",
+        "sha256": "7304d09d163def4f25a8ca244617677bd9ec73424eb4e4137341e8d236dee354"
+      }
+    },
+    "population_observed_at": "2021-03-31",
+    "missing_population": "null_never_zero",
+    "purpose": "offline_external_evaluation_only"
+  },
+  "candidate": {
+    "namespace": "146301_1.",
+    "valid_geometry": true,
+    "unique_official_address": true,
+    "background_sampling": "all_eligible_buildings",
+    "excluded_unmatched_observed_outlets": "retain_as_unknown_background",
+    "brands": [
+      "zabka",
+      "lewiatan"
+    ],
+    "matching_maximum_distance_m": 10,
+    "matching_policy": "existing_exact_unique_address_no_alternative_covering_footprint",
+    "label": "observed_presence_or_unlabelled_background",
+    "grouping": "one_row_per_stable_building_ID_union_of_selected_brands"
+  },
+  "freshness": {
+    "minimum_separation_m": 2000,
+    "separation_rule": "strictly_greater_than",
+    "reference": "all_prior_feature_fit_prediction_origins_and_old_study_envelope",
+    "old_geography_eligible": false,
+    "previous_online_exposure": "incomplete_conservatively_exclude_entire_old_geography",
+    "reject_any_exposed_building_source_id": true,
+    "definition": "Previously unused locations and labels for feature design fitting tuning evaluation or online assessment; prior national public archive download alone is not model exposure"
+  },
+  "support": {
+    "minimum_positives": 30,
+    "minimum_background": 30
+  },
+  "metrics": {
+    "minimum_ap_gain": 0.02,
+    "minimum_precision_at_20_gain": 0.05
+  },
+  "evaluation": {
+    "primary_model": "catboost",
+    "required_references": [
+      "population_only",
+      "access_only"
+    ],
+    "logistic_comparison": "descriptive_paired",
+    "shortlist_size": 20,
+    "recall_at_20": "descriptive_not_a_prospective_gate",
+    "tie_policy": "existing_grouped_average_precision_fractional_boundary_top20",
+    "aggregation": "one_complete_external_city_candidate_frame",
+    "background_prevalence": "full_frame_not_old_ten_to_one_sample",
+    "support_failure": "insufficient_evidence_without_scoring_or_cohort_reselection",
+    "multiple_testing": "one_primary_model_one_city_no_tuning",
+    "uncertainty": "single_city_descriptive_no_independent_region_confidence_interval",
+    "historical_gates": "preserved_unchanged_never_reinterpreted",
+    "new_criteria_reason": "fixed_twenty_site_review_budget_precision_and_recall_coupled_by_positive_count"
+  },
+  "models": {
+    "catboost": {
+      "path": ".local/models/grocery-catboost-v1_d4335aa9b85606a11d74d452/primary.joblib",
+      "sha256": "080836267a3f2dea04eb482595cb044819516944d58d738bc29f217360a03d5f"
+    },
+    "logistic": {
+      "path": ".local/models/grocery-logistic-v1_696f574c6088ee519be15ad4/primary__candidate.joblib",
+      "sha256": "69e83176785fef29bf4ff035954b030f155e1f51ffe129c5b9a80e21fe74d68c"
+    },
+    "population_only": {
+      "path": ".local/models/grocery-logistic-v1_696f574c6088ee519be15ad4/primary__population_only.joblib",
+      "sha256": "238ccd1df0fa3fcf01f490454b4073b6185defbb854b9fd475fd6626e8a5ad5b"
+    },
+    "access_only": {
+      "path": ".local/models/grocery-logistic-v1_696f574c6088ee519be15ad4/primary__access_only.joblib",
+      "sha256": "bed8093bcba4c50f1284aba352c82279235d92b399c41cfb6921e2d722ba1876"
+    }
+  },
+  "features": {
+    "version": "warsaw-grocery-features-v1",
+    "predictor_count": 17,
+    "semantics": "unchanged_shared_RAW_FEATURE_QUERY_and_build_feature_row",
+    "source_role_aliases": "legacy_internal_keys_with_explicit_actual_Radom_provenance",
+    "unknown_population": "null_never_zero",
+    "target_occupancy_predictors": false
+  },
+  "lineage": {
+    "logistic_directory": ".local/models/grocery-logistic-v1_696f574c6088ee519be15ad4",
+    "catboost_directory": ".local/models/grocery-catboost-v1_d4335aa9b85606a11d74d452",
+    "feature_directory": ".local/features/grocery-v1_e66f834cc9612bcf3ba3bb54",
+    "readiness_directories": [
+      ".local/experiments/1ccd4eea2c388605_031368935e9cca20_0de5077dc527",
+      ".local/experiments/b6983ac6524079ce_031368935e9cca20_4a0a6974e7c9",
+      ".local/experiments/review/b6983ac6524079ce_031368935e9cca20_4a0a6974e7c9"
+    ],
+    "manifest_sha256": {
+      ".local/models/grocery-catboost-v1_d4335aa9b85606a11d74d452": "286fd27068647d0330ed68f5c2817f7c731f3556a81d9617e1c4994d074aabb2",
+      ".local/models/grocery-logistic-v1_696f574c6088ee519be15ad4": "1d749c2e9b10fa7fff09a049a72580bc24f04249891248ab08133c94355f456e",
+      ".local/features/grocery-v1_e66f834cc9612bcf3ba3bb54": "e2d3a39fe34695fb63fd76ba85f8851e1708574fda292b31028bd7c08ea33c69"
+    }
+  },
+  "artifact_policy": {
+    "root": ".local/evaluations",
+    "protocol_committed_before_fresh_acquisition": true,
+    "producer_committed_before_scoring": true,
+    "consume_before_scoring": true,
+    "failed_scoring_consumes_checkpoint": true,
+    "repeat_completed_run": "reuse_verified_immutable_results_only",
+    "retraining": false,
+    "tuning": false,
+    "alternative_cohort_after_observation": false
+  },
+  "promotion": {
+    "rankings_enabled": false,
+    "automatic_promotion": false,
+    "pass_state": "withheld_pending_independent_review",
+    "scope": "External replication alone does not validate Warsaw ranking release or commercial success"
+  },
+  "research_sources": [
+    "https://scikit-learn.org/stable/modules/cross_validation.html",
+    "https://arxiv.org/abs/1506.02629",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC4258395/"
+  ]
+}
