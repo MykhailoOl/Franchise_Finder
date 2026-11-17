@@ -66,17 +66,17 @@ export function GroceryAssessment({ buildingId }: { buildingId: number }) {
   const announcement = loading ? 'Loading grocery information…' : current.status === 'error' ? current.error : 'Grocery information loaded. A franchise recommendation is not available.'
 
   return <section className="grocery-assessment" aria-labelledby={titleId}>
-    <div className="grocery-heading"><h3 id={titleId}>Grocery assessment</h3></div>
+    <div className="grocery-heading"><h3 id={titleId}>Activity & brand requirements</h3></div>
     <p className={loading ? 'grocery-loading' : 'grocery-announcement'} role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
     <div aria-busy={loading}>
       {current?.status === 'error' && <div className="grocery-error"><p>{current.error} You can still explore the neighborhood below.</p><button className="text-button" type="button" onClick={() => setRevision((value) => value + 1)}>Try grocery information again</button></div>}
       {assessment && <>
-        <div className="grocery-availability"><h4>Recommendation not available</h4><p>{assessment.ranking.reason}</p></div>
-        <div className="grocery-places-heading"><h4>Nearby places</h4><span>Within 500 m</span></div>
+        <div className="grocery-places-heading"><h4>Nearby activity</h4><span>Fixed 500 m distance</span></div>
         <dl className="grocery-facts">{activityFacts.map((fact) => <ActivityFact key={fact.id} label={fact.label} evidence={assessment.evidence.find((item) => item.id === fact.id)} />)}</dl>
-        <p className="grocery-caption">Mapped places outside this building, within a straight-line distance. These counts do not measure customer traffic.</p>
+        <p className="grocery-caption">Always within 500 m, independent of the neighborhood distance above. Mapped places outside this building; these counts do not measure customer traffic.</p>
         <div className="grocery-requirements-heading"><h4>Brand requirements</h4><p>Unit availability, size and permitted use need to be checked with the owner and the brand.</p></div>
         <div className="grocery-brands">{assessment.requirements.map((brand) => <BrandRequirements key={brand.brand_id} brand={brand} />)}</div>
+        <details className="grocery-model-note"><summary>Why no recommendation?</summary><p>{assessment.ranking.reason}</p></details>
         <AssessmentSources assessment={assessment} />
       </>}
     </div>

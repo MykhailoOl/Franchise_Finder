@@ -5,10 +5,10 @@
 .grocery-error { margin-top: 14px; padding: 12px; border-radius: 8px; border: 1px solid #ddd0b0; background: #fbf7eb; }
 .grocery-error p { margin: 0 0 8px; color: #796338; font-size: 12px; line-height: 1.7; }
 .grocery-error button { min-height: 38px; text-align: left; }
-.grocery-availability { margin: 14px 0 20px; padding-left: 12px; border-left: 3px solid #abbba3; }
-.grocery-availability h4 { margin: 0 0 6px; color: #50634a; font-size: 12px; font-weight: 600; }
-.grocery-availability p { margin: 0; color: #64725d; font-size: 12px; line-height: 1.7; }
-.grocery-places-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.grocery-model-note { margin-top: 14px; }
+.grocery-model-note > summary { padding: 5px 0; color: #62745a; font-size: 11px; cursor: pointer; }
+.grocery-model-note > p { margin: 7px 0 0; color: #64725d; font-size: 11px; line-height: 1.7; }
+.grocery-places-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 16px; }
 .grocery-places-heading h4, .grocery-requirements-heading h4 { margin: 0; color: #47633c; font-size: 13px; font-weight: 600; }
 .grocery-places-heading > span { color: #708168; font-size: 10px; white-space: nowrap; }
 .grocery-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }

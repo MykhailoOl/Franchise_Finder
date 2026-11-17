@@ -22,6 +22,17 @@ export type NearbyVenue = {
   updated_at?: string | null
 }
 
+export type PopulationContext = {
+  status: 'available' | 'unavailable'
+  scope: 'containing_census_cell'
+  population: number | null
+  resolution_m: 500
+  observation_year: 2021
+  cell_id: string | null
+  source: ProfileSource | null
+  method: 'official_national_population_grid'
+}
+
 export type BuildingProfileData = {
   building_id: number
   radius_m: ProfileRadius
@@ -38,6 +49,7 @@ export type BuildingProfileData = {
     method: 'area_weighted_grid'
     source: ProfileSource | null
   }
+  population_context?: PopulationContext | null
   competition: {
     status: ContextStatus
     categories: {
@@ -86,6 +98,15 @@ function isVenue(value: unknown): boolean {
     && typeof value.source_url === 'string' && typeof value.location_method === 'string'
 }
 
+function isPopulationContext(value: unknown): boolean {
+  if (value === undefined || value === null) return true
+  return isRecord(value) && ['available', 'unavailable'].includes(String(value.status))
+    && value.scope === 'containing_census_cell' && value.resolution_m === 500 && value.observation_year === 2021
+    && value.method === 'official_national_population_grid' && isSource(value.source)
+    && (value.cell_id === null || (typeof value.cell_id === 'string' && value.cell_id.length > 0))
+    && (value.status === 'available' ? typeof value.population === 'number' && Number.isSafeInteger(value.population) && value.population >= 0 : value.population === null)
+}
+
 export async function getBuildingProfile(buildingId: number, radius: ProfileRadius, signal: AbortSignal): Promise<BuildingProfileData> {
   const response = await fetch(`/api/v1/map/buildings/${buildingId}/profile?radius_m=${radius}`, {
     signal, headers: { Accept: 'application/json' }, cache: 'no-store',
@@ -100,6 +121,7 @@ export async function getBuildingProfile(buildingId: number, radius: ProfileRadi
     || !isRecord(value.origin) || !['ready', 'partial'].includes(String(value.context_status))
     || !isRecord(value.population) || !['ready', 'partial', 'unavailable'].includes(String(value.population.status))
     || !isCount(value.population.estimated_residents) || !isCount(value.population.coverage_fraction) || !isSource(value.population.source)
+    || !isPopulationContext(value.population_context)
     || !isRecord(value.competition) || !['ready', 'partial', 'unavailable'].includes(String(value.competition.status))
     || !Array.isArray(value.competition.categories)
     || !value.competition.categories.every((category) => isRecord(category) && typeof category.id === 'string' && typeof category.name === 'string'

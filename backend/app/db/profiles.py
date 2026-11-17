@@ -9,9 +9,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.profile_data import ACCESS_CATEGORIES, COMPETITION_CATEGORIES
 from app.db.buildings import MapDataUnavailableError
+from app.db.population_context_v2 import population_context
 
 RADII = (300, 500, 1000)
-PROFILE_SCHEMA_VERSION = "building-profile-v3"
+PROFILE_SCHEMA_VERSION = "building-profile-v4"
 logger = logging.getLogger(__name__)
 UNKNOWN_PREMISES = [
     {"id": "usable_unit_area", "label": "Usable area of a specific commercial unit"},
@@ -423,6 +424,7 @@ def get_profile(engine: Engine, building_id: int, radius: int) -> dict | None:
             if all(part["status"] == "ready" for part in (population, competition, access))
             else "partial",
             "population": population,
+            "population_context": population_context(connection, building, radius),
             "competition": competition,
             "access": access,
             "premises": {"status": "unknown", "unknown_fields": UNKNOWN_PREMISES},

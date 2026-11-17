@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getFranchiseCatalog, getOutlets, type FranchiseCatalog, type OutletCollection } from './api'
+import { resolveBrandSelection, type BrandSelection } from './brandSelection'
 
 type State = {
   status: 'loading' | 'ready' | 'error'
@@ -10,7 +11,7 @@ type State = {
 
 export function useFranchises() {
   const [state, setState] = useState<State>({ status: 'loading', catalog: null, outlets: null, error: null })
-  const [selection, setSelection] = useState<string[] | null>(null)
+  const [selection, setSelection] = useState<BrandSelection>(null)
   const [revision, setRevision] = useState(0)
 
   useEffect(() => {
@@ -26,8 +27,7 @@ export function useFranchises() {
   }, [revision])
 
   const selectedIds = useMemo(() => {
-    const available = state.catalog?.brands.map((brand) => brand.id) ?? []
-    return selection === null ? available : selection.filter((id) => available.includes(id))
+    return resolveBrandSelection(state.catalog?.brands ?? [], selection)
   }, [selection, state.catalog])
 
   const visibleOutlets = useMemo<OutletCollection>(() => ({
@@ -45,5 +45,5 @@ export function useFranchises() {
     setSelection(ids.every((id) => selectedIds.includes(id)) ? selectedIds.filter((id) => !ids.includes(id)) : [...new Set([...selectedIds, ...ids])])
   }
 
-  return { ...state, selectedIds, selectedBrands, visibleOutlets, toggleBrands, selectAll: () => setSelection(null), selectNone: () => setSelection([]), retry }
+  return { ...state, selectedIds, selectedBrands, visibleOutlets, toggleBrands, selectAll: () => setSelection('all'), selectGrocery: () => setSelection(null), selectNone: () => setSelection([]), retry }
 }

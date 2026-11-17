@@ -1,6 +1,17 @@
 .building-profile { margin-top: 24px; padding-top: 22px; border-top: 1px solid #d8e3cd; }
 .profile-heading { margin-bottom: 16px; }
 .profile-heading h3 { margin: 0; color: #3b6432; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
+.profile-heading > p { margin: 8px 0 0; color: #62735b; font-size: 12px; line-height: 1.65; }
+.profile-premises-summary { margin: 0 0 18px; padding: 9px 11px; border-left: 3px solid #cbbb8f; border-radius: 3px; background: #f7f3e7; color: #76653f; font-size: 11px; line-height: 1.6; }
+.profile-census-square { margin-top: 10px; padding: 13px; border: 1px solid #d9e1d2; border-radius: 9px; background: #f7f9f3; }
+.profile-census-square > div { display: flex; align-items: flex-start; gap: 12px; }
+.profile-census-square h4 { flex: 1; margin: 0; color: #586b4d; font-size: 12px; font-weight: 500; line-height: 1.6; }
+.profile-census-square strong { color: #46633a; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.profile-census-square p { margin: 7px 0; color: #6c795e; font-size: 11px; line-height: 1.65; }
+.profile-census-square > span { color: #78826d; font-size: 10px; line-height: 1.6; }
+.profile-other-businesses { margin-top: 16px; }
+.profile-other-businesses > summary { padding: 7px 0; color: #637b53; font-size: 12px; cursor: pointer; }
+.profile-other-businesses > div { margin-top: 7px; }
 .profile-radius { margin: 0; padding: 0; border: 0; }
 .profile-radius legend { padding: 0; margin-bottom: 8px; color: #5c784b; font-size: 12px; }
 .profile-radius > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }

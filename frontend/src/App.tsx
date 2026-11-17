@@ -168,11 +168,11 @@ function App() {
     <div ref={workspaceRef} className="map-workspace">
       <header className="site-header">
         <a className="brand" href="/" aria-label="MasterFranchises home"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M5 22V7l9 8 9-8v15M5 7l9-4 9 4M14 15v10" /></svg></span><span>MasterFranchises</span></a>
-        <span className="header-page">Find your next location</span>
+        <span className="header-page">Explore grocery locations</span>
         <span className="city-label"><span />Warsaw</span>
       </header>
       <div className="search-toolbar"><AddressSearch key={manualSelectionRevision} onSelect={selectAddress} /></div>
-      <FranchiseFilters catalog={franchises.catalog} selectedIds={franchises.selectedIds} status={franchises.status} error={franchises.error} onToggle={franchises.toggleBrands} onAll={franchises.selectAll} onNone={franchises.selectNone} onRetry={franchises.retry} />
+      <FranchiseFilters catalog={franchises.catalog} selectedIds={franchises.selectedIds} status={franchises.status} error={franchises.error} onToggle={franchises.toggleBrands} onAll={franchises.selectAll} onGrocery={franchises.selectGrocery} onNone={franchises.selectNone} onRetry={franchises.retry} />
       <nav className="mobile-view-switch" aria-label="Explorer view">
         <button type="button" aria-pressed={mobileView === 'map'} onClick={() => setMobileView('map')}>Map</button>
         <button type="button" aria-pressed={mobileView === 'details'} onClick={() => setMobileView('details')}>Details{(selectedId !== null || outletFocus || groupedOutlets.length > 0) && <span className="selection-indicator" aria-label="Location selected" />}</button>
@@ -183,7 +183,7 @@ function App() {
           {outletFocus && <OutletDetails outlet={outletFocus.outlet} />}
           {groupedOutlets.length > 0 && <section className="building-outlets overlapping-outlets"><h3>{groupedOutlets.length} locations here</h3><p>Choose a franchise to see its address and nearby area.</p><ul>{groupedOutlets.map((outlet) => <li key={outlet.id}><button type="button" onClick={() => selectOutlet(outlet.id)}><strong>{outlet.properties.brand_name}</strong><span>{outlet.properties.address}</span></button></li>)}</ul></section>}
           <div className="selection-content" aria-live="polite" aria-busy={selection.status === 'loading'}>
-            {selection.status === 'idle' && !outletFocus && !groupedOutlets.length && <div className="selection-empty"><div className="building-illustration" aria-hidden="true"><svg viewBox="0 0 120 100" fill="none"><path d="m20 43 40-22 40 22-40 23-40-23Z" /><path d="M20 43v29l40 23 40-23V43M60 66v29" /><path d="m36 52 24-14 24 14M36 65l12 7m24 0 12-7M36 77l12 7m24 0 12-7" /></svg></div><h2>Start with a place</h2><p>Search an address or select a building to explore nearby residents, businesses and transport.</p><div className="navigation-hint">Drag to move · Scroll to zoom</div><button className="mobile-map-link text-button" type="button" onClick={() => setMobileView('map')}>Explore the map</button></div>}
+            {selection.status === 'idle' && !outletFocus && !groupedOutlets.length && <div className="selection-empty"><div className="building-illustration" aria-hidden="true"><svg viewBox="0 0 120 100" fill="none"><path d="m20 43 40-22 40 22-40 23-40-23Z" /><path d="M20 43v29l40 23 40-23V43M60 66v29" /><path d="m36 52 24-14 24 14M36 65l12 7m24 0 12-7M36 77l12 7m24 0 12-7" /></svg></div><h2>Start with a place</h2><p>Search an address or select a building to review nearby residents, grocery stores and transport.</p><div className="navigation-hint">Drag to move · Scroll to zoom</div><button className="mobile-map-link text-button" type="button" onClick={() => setMobileView('map')}>Explore the map</button></div>}
             {selection.status === 'loading' && <div className="selection-loading"><span className="loading-ring" /><p>Loading building details…</p></div>}
             {selection.status === 'error' && <div className="selection-error"><h2>Details unavailable</h2><p>{selection.error}</p><button className="text-button" type="button" onClick={retrySelectedBuilding}>Try again</button></div>}
             {feature && <div className="building-details"><h2>{selectedHeading ?? 'Building in Warsaw'}</h2>{feature.properties.building_type_label && <p className="building-use">{feature.properties.building_type_label}</p>}</div>}
