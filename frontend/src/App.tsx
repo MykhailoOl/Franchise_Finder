@@ -173,9 +173,12 @@ function App() {
   const associatedAddresses = feature?.properties.addresses ?? []
   const addressSource = associatedAddresses[0]?.source
   const selectedHeading = feature && selectedAddress?.building_id === feature.id ? selectedAddress.address : feature?.properties.address
+  const primaryAddress = feature && selectedAddress?.building_id === feature.id ? selectedAddress : associatedAddresses[0]
+  const addressTitle = primaryAddress ? `${primaryAddress.street.replace(/^ulica\s+/i, '')} ${primaryAddress.house_number}` : selectedHeading
+  const locality = primaryAddress ? [primaryAddress.postal_code, 'Warszawa'].filter(Boolean).join(' ') : null
   const groupedOutlets = franchises.visibleOutlets.features.filter((outlet) => outletGroup.includes(outlet.id))
   const hasSelection = selectedId !== null || outletFocus !== null || groupedOutlets.length > 0
-  const previewTitle = groupedOutlets.length > 0 ? `${groupedOutlets.length} locations here` : outletFocus?.outlet.properties.brand_name ?? selectedHeading ?? selectedAddress?.address ?? 'Selected building'
+  const previewTitle = groupedOutlets.length > 0 ? `${groupedOutlets.length} locations here` : outletFocus?.outlet.properties.brand_name ?? addressTitle ?? selectedAddress?.address ?? 'Selected building'
   const previewDescription = groupedOutlets.length > 0 ? 'Choose a franchise at this location' : outletFocus?.outlet.properties.address ?? 'Residents, grocery stores & transport'
 
   return (
@@ -200,7 +203,7 @@ function App() {
             {selection.status === 'idle' && !outletFocus && !groupedOutlets.length && <div className="selection-empty"><div className="building-illustration" aria-hidden="true"><svg viewBox="0 0 120 100" fill="none"><path d="m20 43 40-22 40 22-40 23-40-23Z" /><path d="M20 43v29l40 23 40-23V43M60 66v29" /><path d="m36 52 24-14 24 14M36 65l12 7m24 0 12-7M36 77l12 7m24 0 12-7" /></svg></div><h2>Start with a place</h2><p>Search an address or select a building to review nearby residents, grocery stores and transport.</p><div className="navigation-hint">Drag to move · Scroll to zoom</div><button className="mobile-map-link text-button" type="button" onClick={() => setMobileView('map')}>Explore the map</button></div>}
             {selection.status === 'loading' && <div className="selection-loading"><span className="loading-ring" /><p>Loading building details…</p></div>}
             {selection.status === 'error' && <div className="selection-error"><h2>Details unavailable</h2><p>{selection.error}</p><button className="text-button" type="button" onClick={retrySelectedBuilding}>Try again</button></div>}
-            {feature && <div className="building-details"><h2>{selectedHeading ?? 'Building in Warsaw'}</h2>{feature.properties.building_type_label && <p className="building-use">{feature.properties.building_type_label}</p>}</div>}
+            {feature && <div className="building-details"><h2>{addressTitle ?? 'Building in Warsaw'}</h2>{(locality || feature.properties.building_type_label) && <p className="building-use">{[locality, feature.properties.building_type_label].filter(Boolean).join(' · ')}</p>}</div>}
           </div>
           {feature && <BuildingOutlets outlets={feature.properties.franchises ?? []} onSelect={selectOutlet} />}
           {selectedId !== null && <BuildingProfile key={selectedId} buildingId={selectedId} />}

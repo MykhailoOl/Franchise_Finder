@@ -381,7 +381,7 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
               : ''
 
   return (
-    <section className="map-area" aria-label="Interactive Warsaw map">
+    <section className={`map-area${mapError || basemapStatus !== 'ready' || outletError || buildingMessage ? ' map-area-has-notices' : ''}`} aria-label="Interactive Warsaw map">
       <div className="map-canvas" ref={containerRef} />
       <button className="show-all-outlets" type="button" disabled={!outlets.features.some((outlet) => outlet.geometry)} onClick={() => {
         const map = mapRef.current
