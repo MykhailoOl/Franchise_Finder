@@ -26,7 +26,7 @@ function ActivityFact({ label, evidence }: { label: string; evidence?: GroceryEv
 }
 
 function BrandRequirements({ brand }: { brand: GroceryBrand }) {
-  return <details className="grocery-brand"><summary><span>{brand.brand_name}</span><span className="grocery-unknown">To verify</span></summary><div><p>These are the brand’s published criteria. Whether this unit meets them is unconfirmed.</p>{brand.formats.map((format) => <div className="grocery-format" key={format.id}>{brand.formats.length > 1 && <h5>{format.name}</h5>}<ul>{format.requirements.map((requirement) => <li key={requirement.id}><span>{requirement.label}</span><small>{requirement.operator === 'not_published' ? 'Ask the brand' : requirement.strength === 'preferred' ? 'Preference · to verify' : requirement.strength === 'approval' ? 'Brand review needed' : 'Not confirmed'}</small></li>)}</ul></div>)}<p className="grocery-reviewed">Requirements reviewed {dateLabel(brand.reviewed_at)}. Confirm current terms with the brand.</p></div></details>
+  return <details className="grocery-brand"><summary><img src={`/brands/${brand.brand_id}.png`} width="26" height="26" alt="" loading="lazy" /><span>{brand.brand_name}</span><span className="grocery-unknown">To verify</span></summary><div><p>Published criteria. This unit’s suitability has not been confirmed.</p>{brand.formats.map((format) => <div className="grocery-format" key={format.id}>{brand.formats.length > 1 && <h5>{format.name}</h5>}<ul>{format.requirements.map((requirement) => <li key={requirement.id}><span>{requirement.label}</span><small>{requirement.operator === 'not_published' ? 'Ask the brand' : requirement.strength === 'preferred' ? 'Preference · to verify' : requirement.strength === 'approval' ? 'Brand review needed' : 'Not confirmed'}</small></li>)}</ul></div>)}<p className="grocery-reviewed">Requirements reviewed {dateLabel(brand.reviewed_at)}. Confirm current terms with the brand.</p></div></details>
 }
 
 function AssessmentSources({ assessment }: { assessment: GroceryAssessmentData }) {
@@ -69,12 +69,12 @@ export function GroceryAssessment({ buildingId }: { buildingId: number }) {
     <div className="grocery-heading"><h3 id={titleId}>Activity & brand requirements</h3></div>
     <p className={loading ? 'grocery-loading' : 'grocery-announcement'} role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
     <div aria-busy={loading}>
-      {current?.status === 'error' && <div className="grocery-error"><p>{current.error} You can still explore the neighborhood below.</p><button className="text-button" type="button" onClick={() => setRevision((value) => value + 1)}>Try grocery information again</button></div>}
+      {current?.status === 'error' && <div className="grocery-error"><p>{current.error} You can still explore the neighborhood above.</p><button className="text-button" type="button" onClick={() => setRevision((value) => value + 1)}>Try again</button></div>}
       {assessment && <>
-        <div className="grocery-places-heading"><h4>Nearby activity</h4><span>Fixed 500 m distance</span></div>
+        <div className="grocery-places-heading"><h4>Nearby activity</h4><span>Within 500 m</span></div>
         <dl className="grocery-facts">{activityFacts.map((fact) => <ActivityFact key={fact.id} label={fact.label} evidence={assessment.evidence.find((item) => item.id === fact.id)} />)}</dl>
-        <p className="grocery-caption">Always within 500 m, independent of the neighborhood distance above. Mapped places outside this building; these counts do not measure customer traffic.</p>
-        <div className="grocery-requirements-heading"><h4>Brand requirements</h4><p>Unit availability, size and permitted use need to be checked with the owner and the brand.</p></div>
+        <p className="grocery-caption">Always within 500 m, regardless of the distance selected above. Mapped places outside this building, not a measure of customer traffic.</p>
+        <div className="grocery-requirements-heading"><h4>Brand requirements</h4><p>Explore what each brand looks for in a premises.</p></div>
         <div className="grocery-brands">{assessment.requirements.map((brand) => <BrandRequirements key={brand.brand_id} brand={brand} />)}</div>
         <details className="grocery-model-note"><summary>Why no recommendation?</summary><p>{assessment.ranking.reason}</p></details>
         <AssessmentSources assessment={assessment} />

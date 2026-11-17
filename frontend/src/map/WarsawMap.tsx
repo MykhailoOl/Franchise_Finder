@@ -6,6 +6,7 @@ import type { AddressFocusRequest, BuildingFeature, FranchiseBrand, MapMetadata,
 import { BUILDING_LAYER, BUILDING_SOURCE, INITIAL_ZOOM, SELECTED_SOURCE, WARSAW_BOUNDS, WARSAW_CENTER, buildingLayers, createMapStyle } from './style'
 import { BUILDING_BRAND_LABELS, OUTLET_CLUSTERS, OUTLET_LOGOS, OUTLET_POINTS, OUTLET_SOURCE, franchiseBuildingPaint, outletLayers, outletMarkerPaint } from './franchiseLayers'
 import { loadBrandImages } from './brandImages'
+import { focusPadding, isFootprintClipped } from './camera'
 
 setWorkerUrl(workerUrl)
 
@@ -76,15 +77,15 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
     let hoveredId: number | null = null
     const slowTimer = window.setTimeout(() => {
       if (!map.isSourceLoaded('context')) {
-        failedSources.current.add('context')
         setBasemapStatus('error')
       }
     }, 20000)
 
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
     map.addControl(new ScaleControl({ unit: 'metric', maxWidth: 100 }), 'bottom-left')
-    map.addControl(new AttributionControl({ compact: false }), 'bottom-right')
+    map.addControl(new AttributionControl(), 'bottom-right')
     map.touchZoomRotate.disableRotation()
+    map.keyboard.disableRotation()
     map.getCanvas().setAttribute('aria-label', 'Warsaw building map. Drag to pan, scroll to zoom, or use the zoom buttons. Select a building footprint for details.')
 
     map.on('style.load', () => {
@@ -141,11 +142,7 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
       if (typeof id === 'number' && Number.isSafeInteger(id)) onSelect(id)
     })
 
-    const observer = new ResizeObserver(() => map.resize())
-    observer.observe(containerRef.current)
-
     return () => {
-      observer.disconnect()
       window.clearTimeout(slowTimer)
       map.remove()
       mapRef.current = null
@@ -209,8 +206,13 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
     } else {
       (map.getSource(OUTLET_SOURCE) as GeoJSONSource).setData(data)
     }
+  }, [readyMap, outlets])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || readyMap !== map || !map.getLayer('franchise-selected-point')) return
     map.setFilter('franchise-selected-point', ['==', ['id'], outletFocus?.outlet.id ?? -1])
-  }, [readyMap, outlets, outletFocus])
+  }, [readyMap, outletFocus])
 
   useEffect(() => {
     const map = mapRef.current
@@ -276,7 +278,8 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
       if (!selectedFeature || selectedFeature.id !== outlet.properties.building_id) return
       const bounds = new LngLatBounds()
       for (const polygon of selectedFeature.geometry.coordinates) for (const ring of polygon) for (const position of ring) bounds.extend([position[0], position[1]])
-      if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: { top: 100, right: 65, bottom: 100, left: 55 }, maxZoom: 18.5, duration: 700 })
+      const container = map.getContainer()
+      if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: focusPadding(container.clientWidth, container.clientHeight), maxZoom: 18.5, duration: 700 })
     } else if (outlet.geometry) {
       map.flyTo({ center: outlet.geometry.coordinates as [number, number], zoom: 17.5, duration: 700 })
     }
@@ -300,7 +303,8 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
         }
       }
       if (bounds.isEmpty()) return
-      map.fitBounds(bounds, { padding: { top: 110, right: 65, bottom: 110, left: 55 }, maxZoom: 18.5, duration: 900 })
+      const container = map.getContainer()
+      map.fitBounds(bounds, { padding: focusPadding(container.clientWidth, container.clientHeight), maxZoom: 18.5, duration: 900 })
       lastFocusedAddress.current = { map, request: addressFocus }
       return
     }
@@ -317,9 +321,35 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
   }, [addressFocus, selectedFeature, readyMap])
 
   useEffect(() => {
+    const map = mapRef.current
+    if (!map || readyMap !== map || !selectedFeature || addressFocus || outletFocus) return
+    const positions: [number, number][] = []
+    const bounds = new LngLatBounds()
+    for (const polygon of selectedFeature.geometry.coordinates) {
+      for (const ring of polygon) {
+        for (const [longitude, latitude] of ring) {
+          if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) continue
+          positions.push([longitude, latitude])
+          bounds.extend([longitude, latitude])
+        }
+      }
+    }
+    if (bounds.isEmpty()) return
+    const reframe = () => {
+      const container = map.getContainer()
+      const width = container.clientWidth
+      const height = container.clientHeight
+      if (!isFootprintClipped(positions.map((position) => map.project(position)), width, height)) return
+      map.fitBounds(bounds, { padding: focusPadding(width, height), maxZoom: map.getZoom(), duration: 350 })
+    }
+    map.on('resize', reframe)
+    reframe()
+    return () => { map.off('resize', reframe) }
+  }, [readyMap, selectedFeature, addressFocus, outletFocus])
+
+  useEffect(() => {
     if (buildingStatus !== 'loading' || metadata?.status !== 'ready' || readyMap !== mapRef.current || !readyMap || zoom < metadata.minzoom) return
     const timeout = window.setTimeout(() => {
-      failedSources.current.add(BUILDING_SOURCE)
       setBuildingStatus('error')
     }, 20000)
     return () => window.clearTimeout(timeout)
@@ -354,9 +384,12 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
     <section className="map-area" aria-label="Interactive Warsaw map">
       <div className="map-canvas" ref={containerRef} />
       <button className="show-all-outlets" type="button" disabled={!outlets.features.some((outlet) => outlet.geometry)} onClick={() => {
+        const map = mapRef.current
+        if (!map) return
         const bounds = new LngLatBounds()
         for (const outlet of outlets.features) if (outlet.geometry) bounds.extend(outlet.geometry.coordinates as [number, number])
-        if (!bounds.isEmpty()) mapRef.current?.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 800 })
+        const container = map.getContainer()
+        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: focusPadding(container.clientWidth, container.clientHeight), maxZoom: 15, duration: 800 })
       }}>View all locations</button>
       <button className="reset-view" type="button" onClick={() => mapRef.current?.flyTo({ center: WARSAW_CENTER, zoom: INITIAL_ZOOM, bearing: 0, duration: 800 })} disabled={Boolean(mapError)} aria-label="Reset map to central Warsaw"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg></button>
       <div className="map-message-stack" aria-live="polite">
@@ -365,7 +398,7 @@ export function WarsawMap({ metadata, selectedId, selectedFeature, addressFocus,
         {outletError && <div className="map-message map-message-error"><span>{outletError}</span><button type="button" onClick={() => { setOutletError(null); onRetryOutlets() }}>Reload locations</button></div>}
         {buildingMessage && <div className={`map-message ${(metadataError || buildingStatus === 'error') ? 'map-message-error' : ''}`}><span>{buildingMessage}</span>{(metadataError || metadata?.status === 'empty' || buildingStatus === 'error') && <button type="button" onClick={retryBuildings} disabled={metadataLoading}>Retry buildings</button>}</div>}
       </div>
-      <div className="map-legend"><span><i />Building</span><span><i className="outlet-building-swatch" />Franchise</span><span><i className="multiple-brands-swatch" />Multiple brands</span><span><i className="uncertain-outlet-swatch" />Approximate location</span></div>
+      <details className="map-legend"><summary>Map key</summary><div><span><i />Building</span><span><i className="outlet-building-swatch" />Franchise</span><span><i className="multiple-brands-swatch" />Multiple brands in one building</span><span><i className="uncertain-outlet-swatch" />Approximate location</span></div></details>
     </section>
   )
 }
